@@ -1,9 +1,12 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
-import { createStore, applyMiddleware, compose, combineReducers } from "redux";
-import { Provider } from "react-redux";
-import {HashRouter as Router, Redirect, Switch, Route, Link, NavLink} from "react-router-dom";
-import thunk from "redux-thunk";
+import { compose } from "redux";
+import { Provider, connect } from "react-redux";
+import { createBrowserHistory } from 'history';
+import { Router, Route } from 'react-router'
+
+import configureStore from './store'
+import {Redirect, Switch, Link, NavLink} from "react-router-dom";
 import {Menu, Dropdown, Icon} from "antd"
 import MediaQuery from "react-responsive"
 
@@ -19,31 +22,43 @@ import {NavBar, Select} from "@simplus/siui"
 import SimplusUI from "./pages/simplus-ui"
 import Mockup from "./pages/mockup/Mockup"
 import Solutions from "./pages/solutions/Solutions"
-import Home from "./pages/home/Home"
+import Home from "./pages/home/Home";
+import Login from './pages/login';
+import Logout from './pages/logout';
+import Content from './pages/content';
 import Footer from "./pages/simplus-ui/components/Footer"
-// import {Routes as LoginRoutes} from "./pages/login/Routes"
-
-//import {auth} from "./robins"
 
 const enhancer = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
-const store = createStore(
-	combineReducers({
-		useless : (state = {}, action) => state
-	}), enhancer(applyMiddleware(thunk)))
-
+const history = createBrowserHistory({basename: '/'});
+const store = configureStore(history);
 const NavBarItem = NavBar.Item;
 
-export class Routes extends React.Component<any, any>{
+class Routes extends React.Component<any, any>{
 	
 
 	constructor(){
 		super()
 		this.state = {
 			visible : true
+			isValid: false
 		}
 		this.handleMenuClick = this.handleMenuClick.bind(this)
 		this.handleVisibleChange = this.handleVisibleChange.bind(this)
+	}
+	componentWillMount(){
+		const { user } = this.props;
+		if(user){
+			const validation = /@simplusinnovation\.com$/;
+			if(validation.test(user.email)){
+				this.setState({isValid: true});
+				history.push('/');
+			} else {
+				history.push('/content')
+			}
+		} else {
+			history.push('/login');
+		}
 	}
 
 	handleSelect(value : string){
@@ -60,11 +75,12 @@ export class Routes extends React.Component<any, any>{
 	handleVisibleChange = (flag) => {
 		console.log(flag)
     this.setState({ visible: flag });
-  }
-
-	render(){
-	  
-	const SelectOptions = ["Affix", "Alert", "Card", "Icon And Name", "Input", "Jumbo Button", "Left Menu", "Modal", "Picture", "Profile", "Select", "Sub Left Menu", "Table", "Tabs", "Titled Card"]
+	}
+	renderHeader(){
+		const { user } = this.props;
+		const { isValid } = this.state;
+		if(user && isValid){
+			const SelectOptions = ["Affix", "Alert", "Card", "Icon And Name", "Input", "Jumbo Button", "Left Menu", "Modal", "Picture", "Profile", "Select", "Sub Left Menu", "Table", "Tabs", "Titled Card"]
 	const Option = Select.Option;
 	const SelectComponent = (
 	<Select 
@@ -93,13 +109,9 @@ export class Routes extends React.Component<any, any>{
 			<Menu.Item key="5">{SelectComponent}</Menu.Item>
 		</Menu>
 	);
-  
-	  return (
-		<Router>
-		  <Switch>
-			<Route path="/">
-			  <div>
-					<MediaQuery query="(min-width: 1100px)">
+			return (
+				<div>
+				<MediaQuery query="(min-width: 1100px)">
 						<NavBar picture={
 						<div style={{ display : "flex", flexDirection : "row", position: "relative", width: "20%" }}>
 							<img src="/assets/Logo-01.png" width="120px" height="43px" style={{ marginTop: "1rem", marginBottom : "1rem" }} className="si-logo"/>
@@ -124,16 +136,46 @@ export class Routes extends React.Component<any, any>{
 							<Dropdown overlay={menu} trigger={["click"]} onVisibleChange={this.handleVisibleChange} visible={this.state.visible}>
 							<Icon type="bars" style={{ margin : "auto", fontSize : "20", color : "white" }}/>
 						</Dropdown>
+						<Link to="/logout"><h3 style={{margin: 23, color: '#fff'}}>Logout</h3></Link>
 						</NavBar>
 					</MediaQuery>
+					</div>
+			)
+		} else if (user && !isValid){
+			<div>
+				<MediaQuery query="(max-width : 1099px)">
+					<NavBar picture={
+						<div style={{ display : "flex", flexDirection : "row", position: "relative",  margin : "auto" }}>
+							<img src="/assets/Logo-01.png" width="120px" height="43px" style={{ marginTop: "1rem", marginBottom : "1rem" }} className="si-logo"/>
+						</div>
+							}>
+					<Link to="/logout"><h3 style={{margin: 23, color: '#fff'}}>Logout</h3></Link>
+					</NavBar>
+				</MediaQuery>
+				</div>
+		}
+		return '';
+	}
+
+	render(){
+	
+  
+	  return (
+		<Router history={history}>
+		  <Switch>
+			<Route path="/">
+			  <div>
+					{this.renderHeader()}
 				  <Switch>
 						<Redirect exact from="/" to="/home"/>
 						<Route path="/home" component={Home}/>
+						<Route path="/login" component={Login} />
+						<Route path="/logout" component={Logout} />
+						<Route path="/content" component={Content} />
 						<Route path="/components" component={SimplusUI}/>
 						<Route path="/solutions" component={Solutions}/>
 						<Route path="/mockups" component={Mockup}/>
 				  </Switch>
-				  <Footer/>
 				</div>
 			</Route>
 		  </Switch>
@@ -143,12 +185,12 @@ export class Routes extends React.Component<any, any>{
 	}
   
   }
-  
+  export const App = connect(({ user }) => ({ user }))(Routes);
   ReactDOM.render(
 		<LocaleProvider locale={enUS as any}>
 			<Provider store={store}>
 				<div>
-					<Routes/>
+					<App/>
 				</div>
 			</Provider>
 		</LocaleProvider>

@@ -1,19 +1,19 @@
 import * as React from 'react'; 
-import { connect } from 'react-redux';
-import { setUser } from '../../actions/user';
+import { remove } from 'js-cookie';
+
+
 
 class Logout extends React.Component<any, any> {
-    constructor(){
-        super()
-    }
+
     componentWillMount(){
-        const { dispatch, history } = this.props;
-        dispatch(setUser({}));
-        history.push('/login');
+        remove('name')
+        remove('simplus_access_token')
+        window.location.replace('http://localhost:3002');
     }
+    
     render() {
         return <div></div>
     }
 }
 
-export default connect(({ user }) => ({ user }))(Logout);
+export default Logout;

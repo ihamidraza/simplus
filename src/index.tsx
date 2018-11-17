@@ -4,6 +4,7 @@ import { compose } from "redux";
 import { Provider, connect } from "react-redux";
 import { createBrowserHistory } from 'history';
 import { Router, Route } from 'react-router'
+import { get } from 'js-cookie';
 
 import configureStore from './store'
 import {Redirect, Switch, Link, NavLink} from "react-router-dom";
@@ -46,24 +47,14 @@ class Routes extends React.Component<any, any>{
 		super()
 		this.state = {
 			visible : true
-			isValid: false,
-			username: ''
 		}
 		this.handleMenuClick = this.handleMenuClick.bind(this)
 		this.handleVisibleChange = this.handleVisibleChange.bind(this)
 	}
 	componentWillMount(){
-		const { user } = this.props;
-		if(user){
-			const validation = /@simplusinnovation\.com$/;
-			if(validation.test(user.email)){
-				this.setState({isValid: true});
-				history.push('/');
-			} else {
-				history.push('/content')
-			}
-		} else {
-			history.push('/login');
+		const token = get('simplus_access_token')
+		if(!token){
+			window.location.replace('http://localhost:3002');
 		}
 	}
 
@@ -83,9 +74,7 @@ class Routes extends React.Component<any, any>{
     this.setState({ visible: flag });
 	}
 	renderHeader(){
-		const { user } = this.props;
-		const { isValid } = this.state;
-		if(user && isValid){
+		
 			const SelectOptions = ["Affix", "Alert", "Card", "Icon And Name", "Input", "Jumbo Button", "Left Menu", "Modal", "Picture", "Profile", "Select", "Sub Left Menu", "Table", "Tabs", "Titled Card"]
 	const Option = Select.Option;
 	const SelectComponent = (
@@ -130,7 +119,7 @@ class Routes extends React.Component<any, any>{
 							<NavLink activeClassName="active" to="/components"  ><NavBarItem>Weaver</NavBarItem></NavLink>
 							<NavLink activeClassName="active" to="/solutions"  ><NavBarItem>Solutions</NavBarItem></NavLink>
 							<NavLink activeClassName="active" to="/mockups"  ><NavBarItem>Mockups</NavBarItem></NavLink>
-							<NavBarItem>{user.name}</NavBarItem>
+							<NavBarItem>{get('name')}</NavBarItem>
 							<NavLink activeClassName="active" to="/logout"  ><NavBarItem>Logout</NavBarItem></NavLink>
 					
 							{/* <NavBarItem>Settings</NavBarItem> */}
@@ -145,27 +134,12 @@ class Routes extends React.Component<any, any>{
 							<Dropdown overlay={menu} trigger={["click"]} onVisibleChange={this.handleVisibleChange} visible={this.state.visible}>
 							<Icon type="bars" style={{ margin : "auto", fontSize : "20", color : "white" }}/>
 						</Dropdown>
-						<h3 style={style}>{user.name}</h3>
+						<h3 style={style}>{''}</h3>
 						<Link to="/logout"><h3 style={style}>Logout</h3></Link>
 						</NavBar>
 					</MediaQuery>
 					</div>
 			)
-		} else if (user && !isValid){
-			<div>
-				<MediaQuery query="(max-width : 1099px)">
-					<NavBar picture={
-						<div style={{ display : "flex", flexDirection : "row", position: "relative",  margin : "auto" }}>
-							<img src="/assets/Logo-01.png" width="120px" height="43px" style={{ marginTop: "1rem", marginBottom : "1rem" }} className="si-logo"/>
-						</div>
-							}>
-					<h3 style={style}>{user.name}</h3>
-					<Link to="/logout"><h3 style={style}>Logout</h3></Link>
-					</NavBar>
-				</MediaQuery>
-				</div>
-		}
-		return '';
 	}
 
 	render(){
